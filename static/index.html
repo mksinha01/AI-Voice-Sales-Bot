@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Intelligence Dashboard | AI Voice Sales Bot</title>
+  <meta name="description" content="Professional AI Voice Sales Bot Dashboard - Full-duplex WebRTC SaaS closer with real-time live chat, call recording, and AI analytics.">
+
+  <!-- Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- LiveKit Client Web SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.5.9/dist/livekit-client.umd.min.js"></script>
+
+  <!-- Nixtio Dribbble Design System Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Floating Master Dashboard Window -->
+  <div class="dashboard-frame">
+    
+    <!-- ── 1. Slim Left Dock ── -->
+    <aside class="dock-sidebar">
+      <div class="dock-top">
+        <div class="dock-logo" id="dock-logo-btn" title="AI Sales Bot">
+          <span>AI</span>
+        </div>
+      </div>
+
+      <nav class="dock-nav">
+        <button class="dock-btn active" id="dock-btn-dash" title="Sales Dashboard">
+          <i data-lucide="layout-grid" style="width: 20px; height: 20px;"></i>
+        </button>
+        <button class="dock-btn" id="dock-btn-fav" title="Preset SaaS Catalog">
+          <i data-lucide="heart" style="width: 20px; height: 20px;"></i>
+        </button>
+        <button class="dock-btn" id="dock-btn-intel" title="Call Intelligence &amp; Monitoring">
+          <i data-lucide="activity" style="width: 20px; height: 20px;"></i>
+        </button>
+        <button class="dock-btn" id="dock-btn-settings" title="Prompt &amp; SaaS Studio">
+          <i data-lucide="sliders" style="width: 20px; height: 20px;"></i>
+        </button>
+      </nav>
+
+      <div class="dock-bottom">
+        <button class="dock-btn-add" id="dock-btn-add-product" title="Add Custom SaaS Product">
+          <i data-lucide="plus" style="width: 20px; height: 20px;"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── 2. Main Content Area ── -->
+    <main class="dashboard-main">
+      
+      <!-- Top Navigation Bar -->
+      <header class="top-navbar">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="nav-pill-group">
+            <button class="nav-pill active" id="tab-nav-room">
+              <i data-lucide="phone-call" style="width: 15px; height: 15px;"></i>
+              <span>Sales Room</span>
+            </button>
+            <button class="nav-pill" id="tab-nav-monitoring">
+              <i data-lucide="activity" style="width: 15px; height: 15px;"></i>
+              <span>Monitoring</span>
+            </button>
+            <button class="nav-pill" id="tab-nav-studio">
+              <i data-lucide="sliders" style="width: 15px; height: 15px;"></i>
+              <span>Support &amp; Prompts</span>
+            </button>
+          </div>
+          <button class="nav-pill-icon" id="btn-search-calls" title="Search calls">
+            <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+          </button>
+        </div>
+
+        <div class="user-profile-pill">
+          <div class="user-meta">
+            <div class="user-name">Alex Closer</div>
+            <div class="user-role" id="bot-role-status">LiveKit &bull; Ready</div>
+          </div>
+          <div class="avatar-wrapper">
+            <span>AC</span>
+            <div class="avatar-badge" id="avatar-live-indicator"></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Quick Search Bar (Toggled on search icon click) -->
+      <div class="quick-search-bar" id="quick-search-bar">
+        <i data-lucide="search" style="width: 16px; height: 16px; color: var(--accent-lime);"></i>
+        <input type="text" id="input-search-query" placeholder="Filter calls by customer name, product, or sales status...">
+        <button class="card-dots-btn" id="btn-close-search" style="font-size: 1.2rem; color: var(--text-secondary);">&times;</button>
+      </div>
+
+      <!-- Content Header: Title & Filter Pills -->
+      <div class="content-header">
+        <h1 class="page-title" id="main-view-title">CHECK BOX</h1>
+
+        <div class="filter-pills-row">
+          <select class="select-pill" id="date-filter-select">
+            <option value="now">Date: Now</option>
+            <option value="today">Date: Today</option>
+            <option value="all">Date: All Time</option>
+          </select>
+
+          <select class="select-pill" id="product-select">
+            <option value="CloudScale CRM">Product: CloudScale CRM</option>
+            <option value="Securify Vault">Product: Securify Vault</option>
+            <option value="DevFlow AI">Product: DevFlow AI</option>
+          </select>
+
+          <select class="select-pill" id="language-select">
+            <option value="en-US">Lang: English (US)</option>
+            <option value="hi-IN">Lang: Hindi / Hinglish</option>
+            <option value="te-IN">Lang: Telugu</option>
+          </select>
+
+          <input type="text" class="input-pill" id="customer-name" value="Valued Customer" placeholder="Prospect Name" style="width: 145px;">
+
+          <!-- Regulatory Recording Consent Pill -->
+          <label class="consent-pill" title="Toggle recording consent disclosure on call start">
+            <input type="checkbox" id="consent-check" checked>
+            <span>Recording Consent</span>
+          </label>
+
+          <button class="btn-icon-pill" id="btn-toggle-view" title="Toggle Grid / Monitoring Table">
+            <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── 3. VIEW A: The 4-Card Nixtio Dashboard Grid ── -->
+      <div class="dashboard-grid" id="view-room">
+        
+        <!-- CARD 1: CUSTOMER / LIVE CALL CONTROLLER -->
+        <section class="nix-card">
+          <div class="card-header-clean">
+            <span class="card-title-tag">CUSTOMER</span>
+            <button class="card-dots-btn" id="btn-menu-card1">&bull;&bull;&bull;</button>
+          </div>
+
+          <div class="kpi-row">
+            <div class="kpi-block">
+              <div class="kpi-value lime" id="kpi-vad-pitch">
+                <i data-lucide="arrow-up-right" style="width: 20px; height: 20px;"></i>
+                <span id="kpi-pitch-text">2,4%</span>
+              </div>
+              <div class="kpi-label">Voice Pitching</div>
+            </div>
+
+            <div class="kpi-block">
+              <div class="kpi-value orange" id="kpi-vad-listen">
+                <i data-lucide="arrow-down-right" style="width: 20px; height: 20px;"></i>
+                <span id="kpi-listen-text">1,1%</span>
+              </div>
+              <div class="kpi-label">Customer Speech</div>
+            </div>
+          </div>
+
+          <!-- Wavy Neon Waveform Canvas -->
+          <div class="wavy-canvas-container">
+            <canvas id="waveform-canvas"></canvas>
+          </div>
+
+          <!-- Call Action Controller -->
+          <div class="call-action-row">
+            <button class="btn-call-trigger" id="btn-call-toggle">
+              <i data-lucide="mic" style="width: 16px; height: 16px;"></i>
+              <span id="call-toggle-label">Start Sales Call</span>
+            </button>
+            <div class="call-timer-pill" id="call-timer">00:00</div>
+          </div>
+        </section>
+
+        <!-- CARD 2: PRODUCT / DOT MATRIX STATUS -->
+        <section class="nix-card">
+          <div class="card-header-clean">
+            <span class="card-title-tag">PRODUCT</span>
+            <button class="card-dots-btn" id="btn-menu-card2">&bull;&bull;&bull;</button>
+          </div>
+
+          <div class="kpi-row">
+            <div class="kpi-block">
+              <div class="kpi-value lime">
+                <i data-lucide="arrow-up-right" style="width: 20px; height: 20px;"></i>
+                <span id="kpi-conv-rate">2,8%</span>
+              </div>
+              <div class="kpi-label">Demo Conversion</div>
+            </div>
+
+            <div class="kpi-block">
+              <div class="kpi-value orange">
+                <i data-lucide="arrow-down-right" style="width: 20px; height: 20px;"></i>
+                <span id="kpi-obj-rate">3,2%</span>
+              </div>
+              <div class="kpi-label">Objection Rate</div>
+            </div>
+          </div>
+
+          <!-- Dot Matrix Heatmap -->
+          <div class="dot-matrix-container" id="dot-matrix-grid">
+            <!-- Matrix dots generated dynamically with hover tooltips -->
+          </div>
+
+          <!-- Active Pitch Info -->
+          <div style="font-size: 0.78rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+            <span id="active-pitch-tagline" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">
+              AI Sales Automation &amp; Pipeline
+            </span>
+            <span style="font-family: 'JetBrains Mono', monospace; color: var(--accent-lime); font-weight: 700;" id="active-pitch-price">
+              $39 / mo
+            </span>
+          </div>
+        </section>
+
+        <!-- CARD 3: PRODUCT PIPELINE / GROUPED CAPSULE BARS -->
+        <section class="nix-card">
+          <div class="card-header-clean">
+            <span class="card-title-tag">PRODUCT PIPELINE</span>
+            <button class="card-dots-btn" id="btn-menu-card3">&bull;&bull;&bull;</button>
+          </div>
+
+          <!-- Vertical Grouped Capsule Bars -->
+          <div class="capsule-bars-container" id="capsule-bars-container">
+            <div class="capsule-column" onclick="App.filterByStatus('Converted')" title="Filter by Converted">
+              <div class="capsule-block lime" style="height: 82px;" id="bar-conv-1">54</div>
+              <div class="capsule-block white" style="height: 32px;" id="bar-conv-2">18</div>
+            </div>
+            <div class="capsule-column" onclick="App.filterByStatus('Demo Requested')" title="Filter by Demo Requested">
+              <div class="capsule-block white" style="height: 52px;" id="bar-demo-1">20</div>
+              <div class="capsule-block lime" style="height: 94px;" id="bar-demo-2">62</div>
+            </div>
+            <div class="capsule-column" onclick="App.filterByStatus('Interested')" title="Filter by Interested">
+              <div class="capsule-block lime" style="height: 70px;" id="bar-int-1">40</div>
+              <div class="capsule-block orange" style="height: 44px;" id="bar-int-2">26</div>
+            </div>
+            <div class="capsule-column" onclick="App.filterByStatus('Follow-up Required')" title="Filter by Follow-up">
+              <div class="capsule-block orange" style="height: 48px;" id="bar-fol-1">28</div>
+              <div class="capsule-block orange" style="height: 60px;" id="bar-fol-2">35</div>
+            </div>
+            <div class="capsule-column" onclick="App.filterByStatus('Not Interested')" title="Filter by Not Interested">
+              <div class="capsule-block white" style="height: 48px;" id="bar-not-1">12</div>
+              <div class="capsule-block orange" style="height: 38px;" id="bar-not-2">22</div>
+            </div>
+            <div class="capsule-column" onclick="App.filterByStatus('No Response')" title="Filter by No Response">
+              <div class="capsule-block white" style="height: 40px;" id="bar-no-1">14</div>
+              <div class="capsule-block orange" style="height: 65px;" id="bar-no-2">38</div>
+            </div>
+          </div>
+
+          <div class="capsule-legend">
+            <div class="legend-item" onclick="App.filterByStatus('Converted')">
+              <div class="legend-dot lime"></div>
+              <span>Converted</span>
+            </div>
+            <div class="legend-item" onclick="App.filterByStatus('Follow-up Required')">
+              <div class="legend-dot orange"></div>
+              <span>Follow-up</span>
+            </div>
+            <div class="legend-item" onclick="App.filterByStatus('Demo Requested')">
+              <div class="legend-dot white"></div>
+              <span>Demo</span>
+            </div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600;" id="total-calls-kpi">Total: 1,012</span>
+          </div>
+        </section>
+
+        <!-- CARD 4: PROJECTS TIMELINE / LIVE CHAT SCREEN (Right Large Card) -->
+        <section class="nix-card right-big-card">
+          <div class="card-header-clean">
+            <span class="card-title-tag">PROJECTS TIMELINE</span>
+            <button class="card-dots-btn" id="btn-refresh-timeline" title="Refresh">&bull;&bull;&bull;</button>
+          </div>
+
+          <!-- Card Sub-Tabs -->
+          <div class="big-card-tabs">
+            <button class="tab-sub-btn active" id="btn-view-timeline">Timeline View</button>
+            <button class="tab-sub-btn" id="btn-view-chat">Live Chat Screen</button>
+            <button class="tab-sub-btn" id="btn-view-analysis">Post-Call Intelligence</button>
+          </div>
+
+          <!-- View A: Timeline View (Matching Nixtio visual reference) -->
+          <div id="subview-timeline" style="display: flex; flex-direction: column; flex: 1;">
+            <div class="timeline-track-list" id="timeline-track-list">
+              <!-- Dynamically populated from actual SQLite calls -->
+            </div>
+
+            <!-- Bottom Scale -->
+            <div class="timeline-axis-scale">
+              <span>0m</span>
+              <span>1m</span>
+              <span>2m</span>
+              <span>3m</span>
+              <span>4m</span>
+              <span>5m+</span>
+            </div>
+          </div>
+
+          <!-- View B: Live Chat Screen (Zero-latency WebRTC data stream) -->
+          <div id="subview-chat" class="live-chat-panel" style="display: none;">
+            <div class="live-chat-scroll" id="live-chat-box">
+              <div class="chat-bubble-nix bot">
+                <div class="chat-meta-nix">
+                  <span>ALEX &bull; AI CLOSER</span>
+                  <span>READY</span>
+                </div>
+                <div>Hello! Click <strong>Start Sales Call</strong> to begin live voice conversation with Google Gemini. Bidirectional transcript bubbles stream here in real time.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View C: Post-Call Intelligence & Audio Player -->
+          <div id="subview-analysis" class="post-analysis-container" style="display: none;">
+            <div class="analysis-capsule-item">
+              <div class="analysis-label-nix">Sales Outcome</div>
+              <div style="font-size: 1.1rem; font-weight: 800; color: var(--accent-lime);" id="analysis-status">
+                Demo Requested
+              </div>
+            </div>
+
+            <div class="analysis-capsule-item">
+              <div class="analysis-label-nix">Executive Summary</div>
+              <div class="analysis-text-nix" id="analysis-summary">
+                Prospect showed strong interest in automated CRM pipeline intelligence and requested a 15-minute live team demo.
+              </div>
+            </div>
+
+            <div class="analysis-capsule-item">
+              <div class="analysis-label-nix">Requirements &amp; Objections</div>
+              <div class="analysis-text-nix" id="analysis-req-obj">
+                <strong>Requirements:</strong> Automated CRM entry &bull; <strong>Objections:</strong> Team budget review.
+              </div>
+            </div>
+
+            <div class="analysis-capsule-item">
+              <div class="analysis-label-nix">Recommended Next Steps</div>
+              <div class="analysis-text-nix" id="analysis-next-steps">
+                Send 15-minute Zoom invite for Thursday 3 PM and share product overview PDF.
+              </div>
+            </div>
+
+            <!-- Embedded Capsule Audio Player -->
+            <div class="audio-player-capsule">
+              <i data-lucide="volume-2" style="width: 18px; height: 18px; color: var(--accent-lime);"></i>
+              <audio id="call-audio-player" controls preload="none">
+                Your browser does not support audio playback.
+              </audio>
+            </div>
+          </div>
+
+        </section>
+
+      </div>
+
+      <!-- ── 4. VIEW B: Complete Call History & Analytics Table (Integrated from Previous UI) ── -->
+      <section class="monitoring-view-section" id="view-monitoring">
+        <div class="card-header-clean" style="margin-bottom: 0.5rem;">
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 800;">CALL HISTORY &amp; CONVERSION INTELLIGENCE</h2>
+            <p style="font-size: 0.78rem; color: var(--text-secondary);">Chronological records, audio playback, and sales stage classifications.</p>
+          </div>
+          <button class="table-action-btn" id="btn-refresh-table" title="Refresh Table">
+            <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+            <span>Refresh</span>
+          </button>
+        <!-- Dedicated Monitoring Audio Player Bar -->
+        <div class="audio-player-capsule" id="monitoring-audio-container" style="display: none; margin: 0.5rem 0 1rem 0; width: 100%; max-width: 680px; background: rgba(18, 22, 28, 0.95); border: 1px solid var(--accent-lime); padding: 0.65rem 1rem; border-radius: var(--radius-md); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);">
+          <div style="display: flex; align-items: center; gap: 0.75rem; width: 100%;">
+            <i data-lucide="volume-2" style="width: 20px; height: 20px; color: var(--accent-lime); flex-shrink: 0;"></i>
+            <div style="display: flex; flex-direction: column; flex-grow: 1; min-width: 0;">
+              <span id="monitoring-player-label" style="font-size: 0.8rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Playing Call Audio</span>
+              <audio id="monitoring-audio-player" controls preload="auto" style="width: 100%; height: 32px; margin-top: 4px;">
+                Your browser does not support audio playback.
+              </audio>
+            </div>
+            <button id="monitoring-player-close" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.35rem; line-height: 1; padding: 0 6px;" title="Close Player">&times;</button>
+          </div>
+        </div>
+
+        <!-- Filter Pills from Previous UI -->
+        <div class="history-filter-pills" id="history-filter-pills">
+          <button class="history-filter-pill active" data-status="">All Calls</button>
+          <button class="history-filter-pill" data-status="Converted">Converted</button>
+          <button class="history-filter-pill" data-status="Demo Requested">Demo Requested</button>
+          <button class="history-filter-pill" data-status="Interested">Interested</button>
+          <button class="history-filter-pill" data-status="Follow-up Required">Follow-up Required</button>
+          <button class="history-filter-pill" data-status="Not Interested">Not Interested</button>
+          <button class="history-filter-pill" data-status="No Response">No Response</button>
+        </div>
+
+        <!-- Comprehensive Data Table -->
+        <div class="table-scroll-container">
+          <table class="nix-data-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Customer</th>
+                <th>Product Pitched</th>
+                <th>Sales Stage</th>
+                <th>Duration</th>
+                <th>Executive Summary</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="monitoring-tbody">
+              <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  Loading call logs from database...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- ── 5. Modal: SaaS Product & Custom Prompt Studio ── -->
+  <div class="nix-modal-backdrop" id="customizer-modal">
+    <div class="nix-modal-window">
+      <div class="nix-modal-header">
+        <h2 class="modal-title-nix">SaaS Product &amp; System Prompt Studio</h2>
+        <button id="btn-close-modal" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; background: var(--bg-card-inner); padding: 0.25rem; border-radius: var(--radius-full);">
+        <button class="tab-sub-btn active" id="tab-btn-product">Configure SaaS Specs</button>
+        <button class="tab-sub-btn" id="tab-btn-prompt">Custom System Prompt</button>
+      </div>
+
+      <!-- Tab 1: Product Specs -->
+      <div id="tab-content-product" style="display: flex; flex-direction: column; gap: 0.85rem;">
+        <div class="form-group-nix">
+          <label for="cust-prod-name">Product Name *</label>
+          <input type="text" class="input-nix" id="cust-prod-name" placeholder="e.g. CloudScale CRM">
+        </div>
+        <div class="form-group-nix">
+          <label for="cust-prod-tagline">Tagline</label>
+          <input type="text" class="input-nix" id="cust-prod-tagline" placeholder="e.g. AI-Driven Sales Automation">
+        </div>
+        <div class="form-group-nix">
+          <label for="cust-prod-desc">Product Overview</label>
+          <textarea class="textarea-nix" id="cust-prod-desc" rows="2" placeholder="Describe the solution..."></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+          <div class="form-group-nix">
+            <label for="cust-prod-monthly">Monthly Price ($)</label>
+            <input type="text" class="input-nix" id="cust-prod-monthly" value="49">
+          </div>
+          <div class="form-group-nix">
+            <label for="cust-prod-annual">Annual Price ($ / user / mo)</label>
+            <input type="text" class="input-nix" id="cust-prod-annual" value="39">
+          </div>
+        </div>
+        <div class="form-group-nix">
+          <label for="cust-prod-features">Key Capabilities (comma-separated)</label>
+          <input type="text" class="input-nix" id="cust-prod-features" placeholder="Auto-CRM entry, Deal scoring, Slack sync">
+        </div>
+      </div>
+
+      <!-- Tab 2: Custom System Prompt -->
+      <div id="tab-content-prompt" style="display: none; flex-direction: column; gap: 0.85rem;">
+        <div class="form-group-nix">
+          <label for="cust-system-prompt">Full System Prompt Override</label>
+          <textarea class="textarea-nix" id="cust-system-prompt" rows="8" placeholder="You are Alex, an elite sales closer..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions-nix">
+        <button class="btn-nix-outline" id="btn-reset-customizer">Reset</button>
+        <button class="btn-nix-solid" id="btn-save-customizer">Save &amp; Set Active Pitch</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/live-chat.js"></script>
+  <script src="js/livekit-client.js"></script>
+  <script src="js/customizer.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

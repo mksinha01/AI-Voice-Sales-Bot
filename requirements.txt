@@ -1,0 +1,26 @@
+# LiveKit Realtime Voice Stack
+livekit>=0.18.2
+livekit-agents>=0.12.3
+livekit-api>=0.8.0
+livekit-plugins-google>=0.7.2
+livekit-plugins-deepgram>=0.7.0
+livekit-plugins-cartesia>=0.6.0
+livekit-plugins-silero>=0.7.1
+
+# LLM & Post-Call Extraction Framework
+langchain>=0.3.14
+langchain-core>=0.3.29
+langchain-google-genai>=2.0.8
+google-generativeai>=0.8.4
+pydantic>=2.10.4
+pydantic-settings>=2.7.1
+
+# Web Server & API Layer
+fastapi>=0.115.6
+uvicorn[standard]>=0.32.1
+python-multipart>=0.0.20
+python-dotenv>=1.0.1
+aiosqlite>=0.20.0
+aiofiles>=24.1.0
+httpx>=0.28.1
+edge-tts>=7.0.0
