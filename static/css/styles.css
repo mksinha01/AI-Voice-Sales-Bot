@@ -1180,7 +1180,9 @@ table.nix-data-table tr:hover td {
 .live-chat-panel {
   display: flex;
   flex-direction: column;
-  height: 420px;
+  flex: 1;
+  min-height: 420px;
+  height: 100%;
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -1191,10 +1193,13 @@ table.nix-data-table tr:hover td {
   flex-direction: column;
   gap: 12px;
   flex: 1;
+  min-height: 0;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 16px 20px 16px;
+  padding: 12px 16px 24px 16px;
   scroll-behavior: smooth;
+  overscroll-behavior: contain;
 }
 
 .live-chat-scroll::-webkit-scrollbar {

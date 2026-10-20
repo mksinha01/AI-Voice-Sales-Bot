@@ -275,7 +275,10 @@ window.App = {
 
       if (target === "chat") {
         btnChat?.classList.add("active");
-        if (viewChat) viewChat.style.display = "flex";
+        if (viewChat) {
+          viewChat.style.display = "flex";
+          LiveChat.scrollToBottom();
+        }
       } else if (target === "analysis") {
         btnAnalysis?.classList.add("active");
         if (viewAnalysis) viewAnalysis.style.display = "flex";

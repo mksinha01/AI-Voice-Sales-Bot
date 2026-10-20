@@ -7,9 +7,25 @@ const LiveChat = {
   chatBox: null,
   seenIds: new Set(),
   typingElem: null,
+  _observer: null,
 
   init() {
     this.chatBox = document.getElementById("live-chat-box");
+    if (this.chatBox && !this._observer) {
+      // Auto-scroll automatically whenever ANY message or child is added/updated
+      this._observer = new MutationObserver(() => {
+        this.scrollToBottom();
+      });
+      this._observer.observe(this.chatBox, { childList: true, subtree: true, characterData: true });
+    }
+  },
+
+  ensureChatVisible() {
+    const chatBtn = document.getElementById("btn-view-chat");
+    const subviewChat = document.getElementById("subview-chat");
+    if (subviewChat && subviewChat.style.display === "none") {
+      chatBtn?.click();
+    }
   },
 
   clear() {
@@ -25,6 +41,7 @@ const LiveChat = {
     if (!this.chatBox) this.init();
     if (!this.chatBox) return;
 
+    this.ensureChatVisible();
     this.removeConnecting();
     const bubble = document.createElement("div");
     bubble.className = "chat-bubble-nix bot";
@@ -51,6 +68,8 @@ const LiveChat = {
   showTyping(speaker = "Alex") {
     if (!this.chatBox) this.init();
     if (!this.chatBox) return;
+
+    this.ensureChatVisible();
 
     if (this.typingElem) {
       this.scrollToBottom();
@@ -87,7 +106,7 @@ const LiveChat = {
     if (!this.chatBox) this.init();
     if (!this.chatBox || !text || !text.trim()) return;
 
-    // Remove typing indicator and connecting banner as new message arrives
+    this.ensureChatVisible();
     this.hideTyping();
     this.removeConnecting();
 
@@ -121,17 +140,26 @@ const LiveChat = {
     bubble.appendChild(content);
     this.chatBox.appendChild(bubble);
 
-    // Auto-scroll so older messages go upper smoothly
+    // Auto-scroll automatically so older messages move upper and newest is visible
     this.scrollToBottom();
   },
 
   scrollToBottom() {
+    if (!this.chatBox) this.init();
     if (!this.chatBox) return;
-    this.chatBox.scrollTop = this.chatBox.scrollHeight;
-    requestAnimationFrame(() => {
-      if (this.chatBox) {
-        this.chatBox.scrollTop = this.chatBox.scrollHeight;
+
+    const performScroll = () => {
+      if (!this.chatBox) return;
+      this.chatBox.scrollTop = this.chatBox.scrollHeight;
+      const lastChild = this.chatBox.lastElementChild;
+      if (lastChild && typeof lastChild.scrollIntoView === "function") {
+        lastChild.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
       }
-    });
+    };
+
+    performScroll();
+    requestAnimationFrame(performScroll);
+    setTimeout(performScroll, 50);
+    setTimeout(performScroll, 150);
   }
 };
