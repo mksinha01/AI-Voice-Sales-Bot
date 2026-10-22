@@ -99,33 +99,28 @@ const CallHistory = {
 
     if (this.cachedCalls.length === 0) {
       trackList.innerHTML = `
-        <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-size: 0.85rem;">
-          No calls recorded yet. Click <strong>Start Sales Call</strong> to generate your first live record.
+        <div style="text-align: center; color: var(--text-muted); padding: 3rem 1rem; font-size: 0.82rem;">
+          No call sessions yet. Click <strong>Start Sales Call</strong> to begin.
         </div>
       `;
       return;
     }
 
-    trackList.innerHTML = this.cachedCalls.slice(0, 6).map((c, i) => {
+    trackList.innerHTML = this.cachedCalls.slice(0, 9).map((c, i) => {
       const time = c.created_at
         ? new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : `10:${30 - i * 15}`;
+        : `10:${Math.max(10, 45 - i * 5)} AM`;
       const color = this.getTimelineColor(c.sales_status);
       const icon = this.getTimelineIcon(c.sales_status);
       const dur = this.formatDuration(c.duration_seconds);
-      const leftPercent = 10 + (i * 14) % 45;
-      const widthPx = Math.min(240, Math.max(130, 110 + (c.duration_seconds || 45) * 1.5));
+      const displayStatus = c.sales_status || "No Response";
 
       return `
-        <div class="timeline-row">
-          <span class="timeline-time-label">${time}</span>
-          <div class="timeline-track">
-            <div class="timeline-capsule-bar ${color}" style="left: ${leftPercent}%; width: ${widthPx}px;" onclick="CallHistory.showDetails('${c.id}')" title="Click to view details & audio playback">
-              <div class="timeline-icon-badge">
-                <i data-lucide="${icon}" style="width: 12px; height: 12px;"></i>
-              </div>
-              <span>${c.sales_status} &bull; ${dur}</span>
-            </div>
+        <div class="timeline-call-row" onclick="CallHistory.showDetails('${c.id}')" title="Inspect call recording & intelligence">
+          <span class="timeline-call-time">${time}</span>
+          <div class="timeline-call-pill ${color}">
+            <i data-lucide="${icon}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
+            <span>${displayStatus} - ${dur}</span>
           </div>
         </div>
       `;
@@ -231,6 +226,11 @@ const CallHistory = {
         window.App.switchToRoomView();
       }
       document.getElementById("btn-view-analysis")?.click();
+
+      const titleElem = document.getElementById("analysis-call-title");
+      if (titleElem) {
+        titleElem.textContent = `${call.customer_name || 'Prospect'} • Intelligence`;
+      }
 
       const statusElem = document.getElementById("analysis-status");
       if (statusElem) {

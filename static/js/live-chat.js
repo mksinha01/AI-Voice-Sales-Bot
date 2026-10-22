@@ -18,6 +18,12 @@ const LiveChat = {
       });
       this._observer.observe(this.chatBox, { childList: true, subtree: true, characterData: true });
     }
+
+    const downloadBtn = document.getElementById("btn-download-transcript");
+    if (downloadBtn && !downloadBtn._hasListener) {
+      downloadBtn._hasListener = true;
+      downloadBtn.addEventListener("click", () => this.downloadTranscript());
+    }
   },
 
   ensureChatVisible() {
@@ -77,19 +83,23 @@ const LiveChat = {
     }
 
     const bubble = document.createElement("div");
-    bubble.className = "typing-bubble-nix";
+    bubble.className = "chat-message-row bot-row";
     bubble.id = "live-typing-indicator";
     bubble.innerHTML = `
-      <span style="font-size: 0.68rem; font-weight: 700; color: var(--accent-lime); letter-spacing: 0.05em; margin-right: 4px;">
-        ${speaker.toUpperCase()} IS TYPING
-      </span>
-      <div class="typing-dot"></div>
-      <div class="typing-dot"></div>
-      <div class="typing-dot"></div>
+      <div class="chat-avatar bot-avatar"><i data-lucide="bot" style="width: 14px; height: 14px;"></i></div>
+      <div class="chat-message-body">
+        <div class="chat-sender-header">
+          <span class="chat-sender-name">AI Agent</span>
+        </div>
+        <div class="chat-bubble-bubble bot-bubble typing-dots-bubble">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
     `;
 
     this.typingElem = bubble;
     this.chatBox.appendChild(bubble);
+    if (window.lucide) window.lucide.createIcons();
     this.scrollToBottom();
   },
 
@@ -121,26 +131,33 @@ const LiveChat = {
     if (id) this.seenIds.add(`id:${id}`);
 
     const timeStr = timestamp
-      ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const isBot = speaker.toLowerCase() === "bot";
+    const isBot = speaker.toLowerCase() === "bot" || speaker.toLowerCase().includes("agent") || speaker.toLowerCase().includes("alex");
 
     const bubble = document.createElement("div");
-    bubble.className = `chat-bubble-nix ${isBot ? 'bot' : 'customer'}`;
+    bubble.className = `chat-message-row ${isBot ? 'bot-row' : 'customer-row'}`;
 
-    const meta = document.createElement("div");
-    meta.className = "chat-meta-nix";
-    meta.innerHTML = `<span>${isBot ? 'ALEX &bull; AI AGENT' : 'PROSPECT'}</span><span>${timeStr}</span>`;
+    const avatarHtml = isBot
+      ? `<div class="chat-avatar bot-avatar"><i data-lucide="bot" style="width: 14px; height: 14px;"></i></div>`
+      : `<div class="chat-avatar customer-avatar"><i data-lucide="user" style="width: 14px; height: 14px;"></i></div>`;
 
-    const content = document.createElement("div");
-    content.textContent = trimmed;
+    bubble.innerHTML = `
+      ${avatarHtml}
+      <div class="chat-message-body">
+        <div class="chat-sender-header">
+          <span class="chat-sender-name">${isBot ? 'AI Agent' : 'Customer'}</span>
+          <span class="chat-msg-time">${timeStr}</span>
+        </div>
+        <div class="chat-bubble-bubble ${isBot ? 'bot-bubble' : 'customer-bubble'}">
+          ${trimmed}
+        </div>
+      </div>
+    `;
 
-    bubble.appendChild(meta);
-    bubble.appendChild(content);
     this.chatBox.appendChild(bubble);
-
-    // Auto-scroll automatically so older messages move upper and newest is visible
+    if (window.lucide) window.lucide.createIcons();
     this.scrollToBottom();
   },
 
@@ -148,18 +165,62 @@ const LiveChat = {
     if (!this.chatBox) this.init();
     if (!this.chatBox) return;
 
-    const performScroll = () => {
-      if (!this.chatBox) return;
-      this.chatBox.scrollTop = this.chatBox.scrollHeight;
-      const lastChild = this.chatBox.lastElementChild;
-      if (lastChild && typeof lastChild.scrollIntoView === "function") {
-        lastChild.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+    // Use dedicated container ref and update its scrollTop to scrollHeight.
+    // Strictly isolate scrolling to this container. Do NOT scroll window, body, or parent containers.
+    this.chatBox.scrollTop = this.chatBox.scrollHeight;
+    requestAnimationFrame(() => {
+      if (this.chatBox) {
+        this.chatBox.scrollTop = this.chatBox.scrollHeight;
       }
-    };
+    });
+  },
 
-    performScroll();
-    requestAnimationFrame(performScroll);
-    setTimeout(performScroll, 50);
-    setTimeout(performScroll, 150);
+  getTranscriptText() {
+    if (!this.chatBox) this.init();
+    if (!this.chatBox) return "";
+
+    const rows = this.chatBox.querySelectorAll(".chat-message-row:not(#live-typing-indicator)");
+    if (!rows || rows.length === 0) return "";
+
+    const lines = [];
+    const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    const product = window.AppState?.activeProduct ? `Product: ${window.AppState.activeProduct}` : "";
+
+    lines.push("==================================================");
+    lines.push("AI VOICE SALES BOT - LIVE TRANSCRIPT");
+    lines.push(`Exported: ${dateStr} ${new Date().toLocaleTimeString()}`);
+    if (product) lines.push(product);
+    lines.push("==================================================\n");
+
+    rows.forEach(row => {
+      const sender = row.querySelector(".chat-sender-name")?.textContent?.trim() || "Speaker";
+      const time = row.querySelector(".chat-msg-time")?.textContent?.trim() || "";
+      const text = row.querySelector(".chat-bubble-bubble")?.textContent?.trim() || "";
+      if (text) {
+        lines.push(time ? `[${time}] ${sender}:\n${text}\n` : `${sender}:\n${text}\n`);
+      }
+    });
+
+    lines.push("==================================================");
+    lines.push("End of Transcript");
+    return lines.join("\n");
+  },
+
+  downloadTranscript() {
+    const text = this.getTranscriptText();
+    if (!text) {
+      alert("No transcript messages to download.");
+      return;
+    }
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    a.href = url;
+    a.download = `live-transcript-${timestamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 };

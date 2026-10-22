@@ -13,6 +13,9 @@ venv/
 env/
 
 # Database & Runtime Uploads
+*.db
+*.db-journal
+*.db-wal
 data/*.db
 data/*.db-journal
 data/*.db-wal

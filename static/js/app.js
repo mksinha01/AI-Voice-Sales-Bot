@@ -8,7 +8,7 @@ window.AppState = {
   callTimerInterval: null,
   callDurationSeconds: 0,
   activeProduct: "CloudScale CRM",
-  activeLanguage: "en-US",
+  activeLanguage: "auto",
   customSystemPrompt: null,
   customProductData: null,
   isCallActive: false,
@@ -73,74 +73,107 @@ window.App = {
     const tabRoom = document.getElementById("tab-nav-room");
     const tabMon = document.getElementById("tab-nav-monitoring");
     const tabStudio = document.getElementById("tab-nav-studio");
-    const btnToggleView = document.getElementById("btn-toggle-view");
 
-    const dockDash = document.getElementById("dock-btn-dash");
-    const dockFav = document.getElementById("dock-btn-fav");
-    const dockIntel = document.getElementById("dock-btn-intel");
-    const dockSettings = document.getElementById("dock-btn-settings");
-    const dockAdd = document.getElementById("dock-btn-add-product");
+    const navLeads = document.getElementById("tab-nav-leads");
+    const navContacts = document.getElementById("tab-nav-contacts");
+    const navCampaigns = document.getElementById("tab-nav-campaigns");
+    const navAnalytics = document.getElementById("tab-nav-analytics");
+    const navIntegrations = document.getElementById("tab-nav-integrations");
+    const navSettings = document.getElementById("tab-nav-settings");
+    const navHelp = document.getElementById("tab-nav-help");
+    const btnCollapse = document.getElementById("btn-collapse-sidebar");
 
-    // Top Tabs
+    // Navigation switches
     tabRoom?.addEventListener("click", () => this.switchToRoomView());
     tabMon?.addEventListener("click", () => this.switchToMonitoringView());
     tabStudio?.addEventListener("click", () => Customizer.openModal());
 
-    btnToggleView?.addEventListener("click", () => {
-      if (window.AppState.activeView === "room") {
+    [navLeads, navContacts, navCampaigns, navAnalytics, navIntegrations].forEach(btn => {
+      btn?.addEventListener("click", () => {
+        document.querySelectorAll(".sidebar-links .nav-link").forEach(l => l.classList.remove("active"));
+        btn.classList.add("active");
         this.switchToMonitoringView();
+      });
+    });
+
+    navSettings?.addEventListener("click", () => {
+      window.location.href = "/persona-control";
+    });
+    navHelp?.addEventListener("click", () => Customizer.openModal());
+
+    // Sidebar collapse toggle
+    btnCollapse?.addEventListener("click", () => {
+      const frame = document.getElementById("main-dashboard-frame");
+      frame?.classList.toggle("sidebar-collapsed");
+      const icon = document.getElementById("collapse-icon");
+      if (frame?.classList.contains("sidebar-collapsed")) {
+        icon?.setAttribute("data-lucide", "arrow-right");
       } else {
-        this.switchToRoomView();
+        icon?.setAttribute("data-lucide", "arrow-left");
+      }
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    // Call toolbar buttons
+    document.getElementById("btn-toolbar-hangup")?.addEventListener("click", () => {
+      if (window.AppState.isCallActive) this.endCall();
+    });
+
+    document.getElementById("btn-mic-toggle")?.addEventListener("click", () => {
+      const micIcon = document.getElementById("mic-icon");
+      if (window.LiveKitManager && LiveKitManager.room) {
+        const localP = LiveKitManager.room.localParticipant;
+        if (localP) {
+          const isMuted = localP.isMicrophoneEnabled === false;
+          localP.setMicrophoneEnabled(isMuted);
+          micIcon?.setAttribute("data-lucide", isMuted ? "mic" : "mic-off");
+          if (window.lucide) window.lucide.createIcons();
+        }
       }
     });
 
-    // Dock Buttons
-    dockDash?.addEventListener("click", () => {
-      this.setActiveDockBtn("dock-btn-dash");
-      this.switchToRoomView();
+    // Chat input inside cockpit
+    const chatInput = document.getElementById("live-chat-input");
+    const sendBtn = document.getElementById("btn-send-chat");
+    const handleSend = () => {
+      const val = chatInput?.value?.trim();
+      if (!val) return;
+      LiveChat.appendMessage("customer", val);
+      chatInput.value = "";
+    };
+    sendBtn?.addEventListener("click", handleSend);
+    chatInput?.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") handleSend();
     });
 
-    dockFav?.addEventListener("click", () => {
-      this.setActiveDockBtn("dock-btn-fav");
-      this.cycleNextProduct();
+    // Drawer close
+    document.getElementById("btn-close-analysis")?.addEventListener("click", () => {
+      const drawer = document.getElementById("subview-analysis");
+      if (drawer) drawer.style.display = "none";
     });
-
-    dockIntel?.addEventListener("click", () => {
-      this.setActiveDockBtn("dock-btn-intel");
-      this.switchToMonitoringView();
-    });
-
-    dockSettings?.addEventListener("click", () => Customizer.openModal());
-    dockAdd?.addEventListener("click", () => Customizer.openModal());
-    document.getElementById("dock-logo-btn")?.addEventListener("click", () => this.switchToRoomView());
-  },
-
-  setActiveDockBtn(id) {
-    document.querySelectorAll(".dock-btn").forEach(b => b.classList.remove("active"));
-    document.getElementById(id)?.classList.add("active");
   },
 
   switchToRoomView() {
     window.AppState.activeView = "room";
+    document.querySelectorAll(".sidebar-links .nav-link").forEach(l => l.classList.remove("active"));
     document.getElementById("tab-nav-room")?.classList.add("active");
-    document.getElementById("tab-nav-monitoring")?.classList.remove("active");
-    document.getElementById("view-room").style.display = "grid";
-    document.getElementById("view-monitoring").style.display = "none";
-    document.getElementById("main-view-title").textContent = "CHECK BOX";
-    document.getElementById("btn-toggle-view")?.classList.remove("active");
-    this.setActiveDockBtn("dock-btn-dash");
+    const viewRoom = document.getElementById("view-room");
+    const viewMon = document.getElementById("view-monitoring");
+    if (viewRoom) viewRoom.style.display = "flex";
+    if (viewMon) viewMon.style.display = "none";
   },
 
   switchToMonitoringView() {
     window.AppState.activeView = "monitoring";
+    document.querySelectorAll(".sidebar-links .nav-link").forEach(l => l.classList.remove("active"));
     document.getElementById("tab-nav-monitoring")?.classList.add("active");
-    document.getElementById("tab-nav-room")?.classList.remove("active");
-    document.getElementById("view-room").style.display = "none";
-    document.getElementById("view-monitoring").style.display = "flex";
-    document.getElementById("main-view-title").textContent = "MONITORING & LOGS";
-    document.getElementById("btn-toggle-view")?.classList.add("active");
-    this.setActiveDockBtn("dock-btn-intel");
-    CallHistory.renderTable();
+    const viewRoom = document.getElementById("view-room");
+    const viewMon = document.getElementById("view-monitoring");
+    if (viewRoom) viewRoom.style.display = "none";
+    if (viewMon) viewMon.style.display = "flex";
+    if (window.CallHistory && CallHistory.renderTable) {
+      CallHistory.renderTable();
+    }
   },
 
   cycleNextProduct() {
@@ -231,28 +264,40 @@ window.App = {
     this.ctx.restore();
   },
 
-  initDotMatrix() {
+  initDotMatrix(calls = []) {
     const grid = document.getElementById("dot-matrix-grid");
     if (!grid) return;
     grid.innerHTML = "";
 
-    const labels = ["Converted", "Demo Requested", "Interested", "Follow-up", "Qualifying"];
-    for (let i = 0; i < 48; i++) {
+    const totalSlots = 48;
+    for (let i = 0; i < totalSlots; i++) {
       const dot = document.createElement("div");
       dot.className = "matrix-dot";
-      const lbl = labels[i % labels.length];
+      const call = calls[i];
 
-      if (i % 5 === 0) {
-        dot.classList.add("lime");
-        dot.title = `Call #${100 + i}: ${lbl} (High Conversion)`;
-      } else if (i % 7 === 0) {
-        dot.classList.add("orange");
-        dot.title = `Call #${100 + i}: ${lbl} (Objection)`;
-      } else if (i % 11 === 0) {
-        dot.classList.add("white");
-        dot.title = `Call #${100 + i}: ${lbl} (Engaged)`;
+      if (call) {
+        const s = (call.sales_status || "").toLowerCase();
+        if (s.includes("convert") || (s.includes("interest") && !s.includes("not"))) {
+          dot.classList.add("lime");
+        } else if (s.includes("demo")) {
+          dot.classList.add("white");
+        } else if (s.includes("follow") || s.includes("not")) {
+          dot.classList.add("orange");
+        }
+
+        const dur = (window.CallHistory && CallHistory.formatDuration)
+          ? CallHistory.formatDuration(call.duration_seconds)
+          : `${call.duration_seconds || 0}s`;
+        dot.title = `${call.customer_name || 'Prospect'} • ${call.sales_status || 'Call'} • ${dur} (Click to inspect)`;
+        dot.style.cursor = "pointer";
+        dot.onclick = () => {
+          if (window.CallHistory && CallHistory.showDetails) {
+            CallHistory.showDetails(call.id);
+          }
+        };
       } else {
-        dot.title = `Call #${100 + i}: Stage Active`;
+        dot.title = `Call slot #${i + 1} (Awaiting call)`;
+        dot.style.opacity = "0.2";
       }
       grid.appendChild(dot);
     }
@@ -260,26 +305,17 @@ window.App = {
 
   setupSubViews() {
     const btnTimeline = document.getElementById("btn-view-timeline");
-    const btnChat = document.getElementById("btn-view-chat");
     const btnAnalysis = document.getElementById("btn-view-analysis");
 
-    const viewTimeline = document.getElementById("subview-timeline");
-    const viewChat = document.getElementById("subview-chat");
+    const viewTimeline = document.getElementById("timeline-track-list");
     const viewAnalysis = document.getElementById("subview-analysis");
 
     const switchView = (target) => {
-      [btnTimeline, btnChat, btnAnalysis].forEach(b => b?.classList.remove("active"));
+      [btnTimeline, btnAnalysis].forEach(b => b?.classList.remove("active"));
       if (viewTimeline) viewTimeline.style.display = "none";
-      if (viewChat) viewChat.style.display = "none";
       if (viewAnalysis) viewAnalysis.style.display = "none";
 
-      if (target === "chat") {
-        btnChat?.classList.add("active");
-        if (viewChat) {
-          viewChat.style.display = "flex";
-          LiveChat.scrollToBottom();
-        }
-      } else if (target === "analysis") {
+      if (target === "analysis") {
         btnAnalysis?.classList.add("active");
         if (viewAnalysis) viewAnalysis.style.display = "flex";
       } else {
@@ -289,8 +325,19 @@ window.App = {
     };
 
     btnTimeline?.addEventListener("click", () => switchView("timeline"));
-    btnChat?.addEventListener("click", () => switchView("chat"));
-    btnAnalysis?.addEventListener("click", () => switchView("analysis"));
+    btnAnalysis?.addEventListener("click", () => {
+      switchView("analysis");
+      if (window.CallHistory && CallHistory.cachedCalls && CallHistory.cachedCalls.length > 0) {
+        const titleElem = document.getElementById("analysis-call-title");
+        if (!titleElem || titleElem.textContent === "Post-Call Intelligence") {
+          CallHistory.showDetails(CallHistory.cachedCalls[0].id);
+        }
+      }
+    });
+
+    document.getElementById("btn-close-analysis")?.addEventListener("click", () => {
+      switchView("timeline");
+    });
   },
 
   async loadProducts(selectedProductName = null) {
@@ -324,22 +371,20 @@ window.App = {
   },
 
   updateMetricsFromCalls(calls) {
-    if (!calls || calls.length === 0) return;
+    if (!calls) calls = [];
     const total = calls.length;
     const converted = calls.filter(c => c.sales_status === "Converted").length;
     const demo = calls.filter(c => c.sales_status === "Demo Requested").length;
     const objections = calls.filter(c => c.sales_status === "Follow-up Required" || c.sales_status === "Not Interested").length;
 
-    const convRate = total > 0 ? (((converted + demo) / total) * 100).toFixed(1) : "2.8";
-    const objRate = total > 0 ? ((objections / total) * 100).toFixed(1) : "3.2";
+    const convRate = total > 0 ? (((converted + demo) / total) * 100).toFixed(1) : "6.5";
+    const objRate = total > 0 ? ((objections / total) * 100).toFixed(1) : "16.1";
 
     const convElem = document.getElementById("kpi-conv-rate");
     const objElem = document.getElementById("kpi-obj-rate");
-    const totalElem = document.getElementById("total-calls-kpi");
 
     if (convElem) convElem.textContent = `${convRate}%`;
     if (objElem) objElem.textContent = `${objRate}%`;
-    if (totalElem) totalElem.textContent = `Total: ${total}`;
   },
 
   filterByStatus(status) {
@@ -356,13 +401,14 @@ window.App = {
     this.stopTimer();
     window.AppState.callDurationSeconds = 0;
     const timerElem = document.getElementById("call-timer");
-    if (timerElem) timerElem.textContent = "00:00";
+    if (timerElem) timerElem.textContent = "00:00:00";
 
     window.AppState.callTimerInterval = setInterval(() => {
       window.AppState.callDurationSeconds += 1;
-      const m = Math.floor(window.AppState.callDurationSeconds / 60).toString().padStart(2, "0");
+      const h = Math.floor(window.AppState.callDurationSeconds / 3600).toString().padStart(2, "0");
+      const m = Math.floor((window.AppState.callDurationSeconds % 3600) / 60).toString().padStart(2, "0");
       const s = (window.AppState.callDurationSeconds % 60).toString().padStart(2, "0");
-      if (timerElem) timerElem.textContent = `${m}:${s}`;
+      if (timerElem) timerElem.textContent = `${h}:${m}:${s}`;
     }, 1000);
   },
 
@@ -471,11 +517,15 @@ window.App = {
 
       window.AppState.isCallActive = true;
       btn.disabled = false;
-      btn.classList.add("ending");
+      btn.classList.remove("start-mode");
       label.textContent = "End Call";
+      document.getElementById("call-toggle-icon")?.setAttribute("data-lucide", "phone-off");
+      document.getElementById("call-state-text").textContent = "Live Call";
+      document.getElementById("ai-speaking-status").textContent = "AI Agent is speaking...";
       this.startTimer();
       statusRole.textContent = "Alex • Active Call";
       avatarBadge?.classList.add("live");
+      if (window.lucide) window.lucide.createIcons();
 
     } catch (e) {
       console.warn("LiveKit connection note:", e);
@@ -507,12 +557,16 @@ window.App = {
     const avatarBadge = document.getElementById("avatar-live-indicator");
 
     btn.disabled = false;
-    btn.classList.remove("ending");
+    btn.classList.add("start-mode");
     label.textContent = "Start Sales Call";
+    document.getElementById("call-toggle-icon")?.setAttribute("data-lucide", "phone-call");
+    document.getElementById("call-state-text").textContent = "Ready";
+    document.getElementById("ai-speaking-status").textContent = "Ready to start sales call";
     statusRole.textContent = "LiveKit • Ready";
     avatarBadge?.classList.remove("live");
 
     this.stopTimer();
+    if (window.lucide) window.lucide.createIcons();
 
     // Auto-switch to Post-Call Intelligence and load AI summary & status
     setTimeout(async () => {
@@ -536,12 +590,16 @@ window.App = {
     const listenKpi = document.getElementById("kpi-listen-text");
 
     btn.disabled = false;
-    btn.classList.add("ending");
+    btn.classList.remove("start-mode");
     label.textContent = "End Call";
+    document.getElementById("call-toggle-icon")?.setAttribute("data-lucide", "phone-off");
+    document.getElementById("call-state-text").textContent = "Live Call";
+    document.getElementById("ai-speaking-status").textContent = "AI Agent is speaking...";
     window.AppState.isCallActive = true;
     this.startTimer();
     statusRole.textContent = "Alex • Pitching";
     avatarBadge?.classList.add("live");
+    if (window.lucide) window.lucide.createIcons();
 
     const discloseConsent = document.getElementById("consent-check")?.checked;
     const consentText = discloseConsent

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Persona Studio | AI Voice Sales Bot</title>
+  <meta name="description" content="Clean, professional AI sales agent persona and version control studio. Configure prompts, targets, workflow, and model parameters.">
+
+  <!-- Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- LiveKit Client Web SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.5.9/dist/livekit-client.umd.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css?v=5">
+</head>
+<body class="platform-body" style="padding: 1rem 1.5rem;">
+
+  <!-- Toast Notification Container -->
+  <div id="app-toast" class="app-toast"></div>
+
+  <!-- Master Studio Two-Column Dashboard Layout -->
+  <div class="studio-layout">
+
+    <!-- ── 1. Left Sidebar: Version Ledger ── -->
+    <aside class="studio-sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-title-row">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="layers" style="width: 17px; height: 17px; color: var(--accent-lime);"></i>
+            <span class="sidebar-title">Agent Personas</span>
+          </div>
+          <button class="btn-new-version-pill" id="btn-new-draft" title="Create a new draft version">
+            <i data-lucide="plus" style="width: 13px; height: 13px;"></i>
+            <span>New Draft</span>
+          </button>
+        </div>
+
+        <div class="agent-picker-box">
+          <label for="agent-select" class="picker-label">Active Sales Agent</label>
+          <select id="agent-select" class="input-dark" style="padding: 0.45rem 0.65rem; font-size: 0.82rem;">
+            <option value="agent-alex-closer">Alex Closer — Enterprise Sales</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Dynamic Version Cards List -->
+      <div class="version-tabs-ribbon" id="version-tabs-ribbon">
+        <!-- v1, v2, v3, v4, v5 populated dynamically by JS -->
+      </div>
+
+      <!-- Sidebar Bottom Navigation -->
+      <div class="sidebar-footer">
+        <a href="/" class="btn-header-secondary" id="btn-back-to-dashboard" style="width: 100%; justify-content: center; text-decoration: none; padding: 0.6rem 1rem;">
+          <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+          <span>Sales Dashboard</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- ── 2. Right Main Content Area: Studio Workspace ── -->
+    <main class="studio-main">
+
+      <!-- Top Header Bar -->
+      <header class="studio-topbar">
+        <div class="studio-topbar-left">
+          <div class="brand-logo-badge" style="width: 36px; height: 36px; font-size: 1rem;">AI</div>
+          <div>
+            <h1 class="topbar-title">Sales Persona &amp; Version Studio</h1>
+            <span class="topbar-sub">Configure system instructions, sales ICP, objection handling, and live voice parameters</span>
+          </div>
+        </div>
+
+        <div class="studio-topbar-right">
+          <div class="live-active-capsule" id="live-version-badge" title="Currently deployed live to incoming phone calls">
+            <span class="pulse-dot-green"></span>
+            <span id="live-version-text">LIVE: v2 — Product Sales Closer</span>
+          </div>
+
+          <button class="btn-header-secondary" id="btn-open-compare" title="Side-by-side version diff comparison">
+            <i data-lucide="git-compare" style="width: 14px; height: 14px;"></i>
+            <span>Compare</span>
+          </button>
+
+          <button class="btn-header-primary" id="btn-toggle-test-cockpit" title="Open Live Voice Simulator">
+            <i data-lucide="phone-call" style="width: 14px; height: 14px;"></i>
+            <span>Voice Test</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Stage Action & Title Bar -->
+      <div class="stage-action-bar">
+        <div class="stage-title-left">
+          <input type="text" id="current-version-tag-input" class="version-tag-editor-input" placeholder="Version Title / Strategy Tag...">
+          <span class="status-pill-badge active" id="version-status-pill">ACTIVE</span>
+          <span id="unsaved-indicator" class="unsaved-badge" style="display: none;">
+            <span class="dot-unsaved"></span> Unsaved Edits
+          </span>
+        </div>
+
+        <div class="stage-actions-right">
+          <button class="btn-stage-action accent" id="btn-activate-version" title="Deploy this version as the LIVE active voice agent">
+            <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+            <span>Deploy Live</span>
+          </button>
+
+          <button class="btn-stage-action secondary" id="btn-save-draft" title="Save draft configuration">
+            <i data-lucide="save" style="width: 14px; height: 14px;"></i>
+            <span>Save Draft</span>
+          </button>
+
+          <button class="btn-stage-action outline" id="btn-duplicate-version" title="Create editable copy of this version">
+            <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+            <span>Duplicate</span>
+          </button>
+
+          <button class="btn-stage-action outline" id="btn-rollback-version" title="Rollback to this version as a new draft">
+            <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+            <span>Rollback</span>
+          </button>
+
+          <button class="btn-stage-action outline" id="btn-delete-version" title="Delete this version" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4);">
+            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+            <span>Delete</span>
+          </button>
+
+          <button class="btn-stage-action outline" id="btn-publish-version" title="Lock version as immutable published release" style="display: none;">
+            <i data-lucide="lock" style="width: 14px; height: 14px;"></i>
+            <span>Publish</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Immutability Lock Notice -->
+      <div class="immutability-notice" id="immutability-notice-banner" style="display: none;">
+        <i data-lucide="shield-check" style="width: 16px; height: 16px; color: #38bdf8; flex-shrink: 0;"></i>
+        <span><strong>Published Live Version:</strong> Configuration is locked to protect active calls. Click <strong>Duplicate</strong> to create a customizable draft.</span>
+      </div>
+
+      <!-- ── 3 Clean Tabs ── -->
+      <div class="builder-navigation-tabs">
+        <button class="builder-tab-btn active" data-tab="persona">
+          <i data-lucide="user-check" style="width: 14px; height: 14px;"></i>
+          <span>1. Persona &amp; System Prompt</span>
+        </button>
+        <button class="builder-tab-btn" data-tab="sales">
+          <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+          <span>2. Strategy &amp; Knowledge</span>
+        </button>
+        <button class="builder-tab-btn" data-tab="settings">
+          <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
+          <span>3. Tools &amp; Voice Model</span>
+        </button>
+      </div>
+
+      <!-- ── Form Content Panes ── -->
+      <form id="builder-form" class="builder-form" onsubmit="return false;">
+
+        <!-- ── TAB 1: Persona & System Prompt ── -->
+        <div class="builder-pane active" id="pane-persona">
+          <!-- Quick Natural Language AI Enhancer -->
+          <div style="display: flex; gap: 0.65rem; align-items: center; background: linear-gradient(135deg, rgba(21, 22, 28, 0.95), rgba(30, 35, 45, 0.95)); border: 1px solid rgba(197, 248, 42, 0.3); border-radius: var(--radius-md); padding: 0.55rem 0.95rem; margin-bottom: 0.75rem;">
+            <i data-lucide="sparkles" style="width: 16px; height: 16px; color: var(--accent-lime); flex-shrink: 0;"></i>
+            <div style="flex: 1;">
+              <input type="text" id="ai-instruction-input" placeholder="AI Behavior Generator: Describe how you want this agent to sell (e.g. 'Aggressive SaaS closer that handles pricing pushback and secures a 20-min demo')..." style="width: 100%; background: transparent; border: none; color: #fff; font-size: 0.84rem; outline: none;">
+            </div>
+            <button class="btn-ai-enhance" id="btn-ai-generate" style="padding: 0.4rem 0.95rem; font-size: 0.78rem;">
+              <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i>
+              <span>AI Enhance</span>
+            </button>
+          </div>
+
+          <!-- Identity & Goals 2-Col Grid -->
+          <div class="form-grid-2col" style="margin-bottom: 1rem;">
+            <div class="form-card">
+              <h3 class="card-subtitle"><i data-lucide="user" style="width: 15px; height: 15px;"></i> Agent Identity</h3>
+              <div class="form-field">
+                <label for="cfg-persona-name">Agent Name</label>
+                <input type="text" id="cfg-persona-name" class="input-dark" placeholder="e.g. Alex Closer">
+              </div>
+              <div class="form-field">
+                <label for="cfg-persona-role">Role Title</label>
+                <input type="text" id="cfg-persona-role" class="input-dark" placeholder="e.g. Senior SaaS Account Executive">
+              </div>
+              <div class="form-field">
+                <label for="cfg-persona-tone">Communication Tone</label>
+                <input type="text" id="cfg-persona-tone" class="input-dark" placeholder="e.g. Consultative, high-conviction, empathetic">
+              </div>
+              <div class="form-field">
+                <label for="cfg-persona-lang">Primary Language</label>
+                <select id="cfg-persona-lang" class="input-dark">
+                  <option value="en-US">English (US)</option>
+                  <option value="auto">Multilingual Auto-Detect (EN / HI / TE)</option>
+                  <option value="hi-IN">Hindi / Hinglish</option>
+                  <option value="te-IN">Telugu</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="cfg-persona-greeting">Opening Sales Hook / Greeting</label>
+                <textarea id="cfg-persona-greeting" class="input-dark" rows="2" placeholder="Hello! Alex here from CloudScale. What challenges is your sales team facing with pipeline management?"></textarea>
+              </div>
+            </div>
+
+            <div class="form-card">
+              <h3 class="card-subtitle"><i data-lucide="target" style="width: 15px; height: 15px;"></i> Sales Objective &amp; Target ICP</h3>
+              <div class="form-field">
+                <label for="cfg-sales-objective">Core Sales Objective</label>
+                <textarea id="cfg-sales-objective" class="input-dark" rows="3" placeholder="Qualify team size, demonstrate pipeline ROI, and schedule a discovery demo."></textarea>
+              </div>
+              <div class="form-field">
+                <label for="cfg-customer-icp">Ideal Customer Profile (ICP)</label>
+                <textarea id="cfg-customer-icp" class="input-dark" rows="2" placeholder="B2B SaaS Founders, VP of Sales, CROs with 10 to 500 reps."></textarea>
+              </div>
+              <div class="form-field">
+                <label for="cfg-customer-pain">Key Pain Points to Target</label>
+                <textarea id="cfg-customer-pain" class="input-dark" rows="3" placeholder="Reps losing 6 hours every week on manual CRM entry, inaccurate forecasting, dropped leads."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Runtime System Prompt Instructions -->
+          <div class="form-card full-width">
+            <div class="prompt-header-row">
+              <div>
+                <h3 class="card-subtitle"><i data-lucide="terminal" style="width: 15px; height: 15px;"></i> Runtime System Instructions</h3>
+                <p class="field-hint">The master prompt used during live WebRTC voice sessions. Edit directly or click <strong>Recompile</strong> to synthesize from the settings above.</p>
+              </div>
+              <div class="prompt-meta-actions">
+                <span id="prompt-char-count" class="prompt-char-count">0 chars</span>
+                <button type="button" class="btn-sub-action" id="btn-recompile-prompt">
+                  <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i>
+                  <span>Recompile from Config</span>
+                </button>
+              </div>
+            </div>
+            <textarea id="cfg-system-prompt" class="input-dark font-code" rows="12" placeholder="Full operational system instructions for the AI voice agent..."></textarea>
+          </div>
+        </div>
+
+        <!-- ── TAB 2: Sales Strategy & Knowledge ── -->
+        <div class="builder-pane" id="pane-sales">
+          <div class="form-grid-2col" style="margin-bottom: 1rem;">
+            <!-- Products & Pricing -->
+            <div class="form-card">
+              <h3 class="card-subtitle"><i data-lucide="package" style="width: 15px; height: 15px;"></i> Products &amp; Pricing</h3>
+              <div class="form-field">
+                <label for="cfg-products-list">Approved Products (comma-separated)</label>
+                <input type="text" id="cfg-products-list" class="input-dark" placeholder="CloudScale CRM, Securify Vault, DevFlow AI">
+              </div>
+              <div class="form-grid-row">
+                <div class="form-field">
+                  <label for="cfg-price-monthly">Monthly Price ($/mo)</label>
+                  <input type="number" id="cfg-price-monthly" class="input-dark" value="49">
+                </div>
+                <div class="form-field">
+                  <label for="cfg-price-annual">Annual Price ($/user/mo)</label>
+                  <input type="number" id="cfg-price-annual" class="input-dark" value="39">
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="cfg-approved-offers">Approved Special Offers</label>
+                <textarea id="cfg-approved-offers" class="input-dark" rows="3" placeholder="20% annual discount; Free white-glove CRM data migration; Zero setup fee for teams > 10 seats"></textarea>
+              </div>
+            </div>
+
+            <!-- Workflow & Qualification -->
+            <div class="form-card">
+              <h3 class="card-subtitle"><i data-lucide="list-checks" style="width: 15px; height: 15px;"></i> Sales Workflow &amp; Objection Handling</h3>
+              <div class="form-field">
+                <label for="cfg-workflow-stages">Sales Process Stages</label>
+                <input type="text" id="cfg-workflow-stages" class="input-dark" placeholder="Greeting -> Discovery -> Value Pitch -> Objection Handling -> Closing Demo">
+              </div>
+              <div class="form-field">
+                <label for="cfg-qual-questions">Lead Qualification Questions (one per line)</label>
+                <textarea id="cfg-qual-questions" class="input-dark" rows="3" placeholder="How many reps are on your sales team?&#10;What CRM are you currently using?&#10;What timeline are you targeting?"></textarea>
+              </div>
+              <div class="form-field">
+                <label for="cfg-closing-strategy">Closing Strategy &amp; Next-Best Action</label>
+                <input type="text" id="cfg-closing-strategy" class="input-dark" placeholder="Lock in a 15-minute product demonstration with a Solutions Architect this Friday.">
+              </div>
+              <div class="form-field">
+                <label for="cfg-escalation-rules">Escalation &amp; Human Handoff Triggers</label>
+                <input type="text" id="cfg-escalation-rules" class="input-dark" placeholder="Transfer prospect to Account Director if they request custom enterprise SLA or security review.">
+              </div>
+            </div>
+          </div>
+
+          <!-- Approved FAQs -->
+          <div class="form-card full-width">
+            <h3 class="card-subtitle"><i data-lucide="help-circle" style="width: 15px; height: 15px;"></i> Product Truth Source &amp; FAQs</h3>
+            <p class="field-hint" style="margin-bottom: 0.5rem;">Verified answers for common customer questions to ensure hallucination-free conversations.</p>
+            <textarea id="cfg-faqs-text" class="input-dark font-code" rows="7" placeholder='{\n  "How long is onboarding?": "Under 48 hours.",\n  "Is it SOC2 compliant?": "Yes, SOC2 Type II certified."\n}'></textarea>
+          </div>
+        </div>
+
+        <!-- ── TAB 3: Tools & Voice Model ── -->
+        <div class="builder-pane" id="pane-settings">
+          <div class="form-grid-2col">
+            <!-- Tool Permissions -->
+            <div class="form-card">
+              <h3 class="card-subtitle"><i data-lucide="check-square" style="width: 15px; height: 15px;"></i> Allowed Tools &amp; Actions</h3>
+              <p class="field-hint" style="margin-bottom: 0.75rem;">Check the tools this agent is authorized to use during live conversations.</p>
+              <div class="tools-checkbox-grid" id="tools-checkbox-grid">
+                <!-- Rendered dynamically from /api/tools -->
+              </div>
+            </div>
+
+            <!-- Voice & Model Settings -->
+            <div class="form-card">
+              <h3 class="card-subtitle"><i data-lucide="cpu" style="width: 15px; height: 15px;"></i> Speech &amp; Model Architecture</h3>
+              <div class="form-field">
+                <label for="cfg-model-provider">LLM Provider</label>
+                <select id="cfg-model-provider" class="input-dark">
+                  <option value="google">Google Gemini (Realtime Voice)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="cfg-model-name">Model Version</label>
+                <select id="cfg-model-name" class="input-dark">
+                  <option value="gemini-2.0-flash">gemini-2.0-flash (Recommended: lowest latency)</option>
+                  <option value="gemini-1.5-flash">gemini-1.5-flash (Standard)</option>
+                  <option value="gemini-1.5-pro">gemini-1.5-pro (Deep reasoning)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="cfg-tts-voice">Neural Voice Persona</label>
+                <select id="cfg-tts-voice" class="input-dark">
+                  <option value="en-US-GuyNeural">en-US-GuyNeural (Professional American Male)</option>
+                  <option value="en-US-AndrewMultilingualNeural">en-US-AndrewMultilingualNeural (Conversational Male)</option>
+                  <option value="hi-IN-MadhurNeural">hi-IN-MadhurNeural (Conversational Hindi)</option>
+                  <option value="te-IN-MohanNeural">te-IN-MohanNeural (Polite Telugu)</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <div class="slider-header-row">
+                  <label for="cfg-model-temp">Creativity Temperature</label>
+                  <span id="temp-readout" class="slider-val-readout">0.30</span>
+                </div>
+                <input type="range" id="cfg-model-temp" min="0.0" max="1.0" step="0.05" value="0.30" class="input-slider">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </main>
+
+  </div>
+
+  <!-- ── Side-by-Side Version Comparison Modal ── -->
+  <div class="modal-backdrop" id="compare-modal">
+    <div class="modal-window compare-window">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i data-lucide="git-compare" style="width: 20px; height: 20px; color: var(--accent-lime);"></i>
+          <h2>Version Comparison Diff</h2>
+        </div>
+        <button class="modal-close-btn" id="btn-close-compare">&times;</button>
+      </div>
+
+      <div class="compare-selectors-bar">
+        <div class="compare-select-col">
+          <label for="compare-v1-select">Version A (Base):</label>
+          <select id="compare-v1-select" class="input-dark"></select>
+        </div>
+        <div class="compare-vs-badge">VS</div>
+        <div class="compare-select-col">
+          <label for="compare-v2-select">Version B (Target):</label>
+          <select id="compare-v2-select" class="input-dark"></select>
+        </div>
+      </div>
+
+      <div class="compare-diff-scroll">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th style="width: 22%;">Configuration Field</th>
+              <th style="width: 39%;">Version A</th>
+              <th style="width: 39%;">Version B</th>
+            </tr>
+          </thead>
+          <tbody id="compare-diff-table">
+            <!-- Diff rows populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Embedded Live Voice Test Cockpit (Slide-Over Drawer) ── -->
+  <aside class="test-cockpit-drawer" id="test-cockpit-drawer">
+    <div class="cockpit-header">
+      <div class="cockpit-title-row">
+        <span class="live-dot-green"></span>
+        <h3>Voice Session Simulator</h3>
+      </div>
+      <button class="cockpit-close-btn" id="btn-close-cockpit">&times;</button>
+    </div>
+
+    <div class="cockpit-body">
+      <!-- Radar Orb & Waveform -->
+      <div class="cockpit-orb-area">
+        <div class="radar-orb-wrapper">
+          <div class="radar-ring radar-ring-3"></div>
+          <div class="radar-ring radar-ring-2"></div>
+          <div class="radar-ring radar-ring-1"></div>
+          <div class="radar-center-orb">AI</div>
+        </div>
+        <div class="cockpit-status-caption" id="test-call-status-text">
+          Ready to test active agent version
+        </div>
+      </div>
+
+      <!-- Action & Timer Controls -->
+      <div class="cockpit-controls-bar">
+        <div class="call-timer-pill">
+          <span id="test-call-timer">00:00:00</span>
+          <div class="timer-equalizer-bars">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+        <button class="btn-test-call-action" id="btn-start-test-call">
+          <i data-lucide="phone-call" style="width: 14px; height: 14px;"></i>
+          <span>Start Test Call</span>
+        </button>
+      </div>
+
+      <!-- Real-time Transcript Stream -->
+      <div class="cockpit-transcript-container">
+        <div class="transcript-header-label">Live Audio Transcript:</div>
+        <div class="cockpit-transcript-scroll" id="test-transcript-stream">
+          <div class="test-chat-msg bot">
+            <div class="msg-author">AI Agent</div>
+            <div class="msg-content">Click 'Start Test Call' to speak with this configured version.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Scripts -->
+  <script src="js/livekit-client.js?v=5"></script>
+  <script src="js/persona-control.js?v=5"></script>
+</body>
+</html>

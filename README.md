@@ -98,11 +98,43 @@ Open your browser at `http://localhost:8000`.
 
 ---
 
-## 🐳 Docker Deployment
+## 🐳 Production Deployment (Vultr Cloud Compute)
+
+### 1. Launch a Vultr VPS
+- **Product:** Vultr Cloud Compute (Shared CPU or High Performance)
+- **OS:** Ubuntu 24.04 LTS (x64)
+- **Specs:** 1 vCPU, 2GB RAM, 50GB NVMe SSD ($10–$12/month)
+- **Networking:** In Vultr DNS, point an **A Record** (e.g., `salesbot.yourdomain.com`) to your VPS public IPv4 address.
+
+### 2. Deploy via Bootstrap Script
+SSH into your Vultr server and run:
 
 ```bash
-docker build -t voice-sales-bot .
-docker run -d -p 8000:8000 --env-file .env -v $(pwd)/data:/app/data voice-sales-bot
+# 1. Clone repository
+git clone https://github.com/mksinha01/AI-Voice-Sales-Bot.git
+cd AI-Voice-Sales-Bot
+
+# 2. Configure production environment
+cp .env.production.example .env
+nano .env   # Add LIVEKIT credentials, GOOGLE_API_KEY, and your DOMAIN
+
+# 3. Run automated setup script
+chmod +x deploy/setup-vultr.sh
+sudo ./deploy/setup-vultr.sh
+```
+
+The script configures UFW firewall (22/SSH, 80/HTTP, 443/HTTPS), installs Docker, and boots the Docker Compose stack with Caddy automated Let's Encrypt SSL.
+
+### 3. Management Commands
+```bash
+# View live logs (FastAPI + LiveKit Agent + Caddy)
+docker compose logs -f
+
+# Restart application
+docker compose restart
+
+# Verify health status
+curl -k https://localhost/api/health
 ```
 
 ---

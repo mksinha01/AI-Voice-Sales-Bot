@@ -54,7 +54,7 @@ const LiveKitManager = {
     });
 
     // 3. WebRTC Data Channel Receiver (Zero-polling real-time live chat + typing animation)
-    this.room.on(LivekitClient.RoomEvent.DataReceived, (payload, participant) => {
+    this.room.on(LivekitClient.RoomEvent.DataReceived, async (payload, participant) => {
       try {
         const textDecoder = new TextDecoder();
         const jsonStr = textDecoder.decode(payload);
@@ -71,6 +71,14 @@ const LiveKitManager = {
           if (onTranscript) {
             onTranscript(data.speaker, data.text, data.timestamp);
           }
+        } else if (data.type === "end_call") {
+          if (window.LiveChat) {
+            window.LiveChat.hideTyping();
+          }
+          await this.disconnect();
+          if (onDisconnect) {
+            onDisconnect();
+          }
         }
       } catch (err) {
         console.warn("Failed to parse data channel message:", err);
@@ -78,7 +86,8 @@ const LiveKitManager = {
     });
 
     // 4. Disconnect event
-    this.room.on(LivekitClient.RoomEvent.Disconnected, () => {
+    this.room.on(LivekitClient.RoomEvent.Disconnected, async () => {
+      await this.disconnect();
       if (onDisconnect) onDisconnect();
     });
 
@@ -171,37 +180,45 @@ const LiveKitManager = {
     }
   },
 
+  _disconnecting: false,
+
   async disconnect() {
-    const roomName = this.sessionRoomName;
-    await this.stopAndUploadRecording(roomName);
+    if (this._disconnecting) return;
+    this._disconnecting = true;
+    try {
+      const roomName = this.sessionRoomName;
+      await this.stopAndUploadRecording(roomName);
 
-    if (this.audioElement) {
-      try {
-        this.audioElement.pause();
-        this.audioElement.srcObject = null;
-      } catch (e) {}
-    }
-
-    if (this.audioCtx && this.audioCtx.state !== "closed") {
-      try {
-        await this.audioCtx.close();
-      } catch (e) {}
-      this.audioCtx = null;
-      this.destNode = null;
-    }
-
-    if (this.room) {
-      try {
-        await this.room.disconnect();
-      } catch (e) {
-        console.error("Error during room disconnect:", e);
+      if (this.audioElement) {
+        try {
+          this.audioElement.pause();
+          this.audioElement.srcObject = null;
+        } catch (e) {}
       }
-      this.room = null;
-    }
 
-    this.sessionRoomName = null;
-    if (window.LiveChat) {
-      window.LiveChat.hideTyping();
+      if (this.audioCtx && this.audioCtx.state !== "closed") {
+        try {
+          await this.audioCtx.close();
+        } catch (e) {}
+        this.audioCtx = null;
+        this.destNode = null;
+      }
+
+      if (this.room) {
+        try {
+          await this.room.disconnect();
+        } catch (e) {
+          console.error("Error during room disconnect:", e);
+        }
+        this.room = null;
+      }
+
+      this.sessionRoomName = null;
+      if (window.LiveChat) {
+        window.LiveChat.hideTyping();
+      }
+    } finally {
+      this._disconnecting = false;
     }
   }
 };

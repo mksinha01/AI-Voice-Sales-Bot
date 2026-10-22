@@ -38,7 +38,7 @@ class Settings(BaseSettings):
 
     # Sales Bot defaults
     DEFAULT_PRODUCT_NAME: str = "CloudScale CRM"
-    DEFAULT_LANGUAGE: str = "en-US"
+    DEFAULT_LANGUAGE: str = "auto"
     RECORDING_CONSENT_DISCLOSURE: str = (
         "Quick note, our call is recorded for quality assurance."
     )
