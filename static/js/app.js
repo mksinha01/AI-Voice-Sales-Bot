@@ -66,6 +66,30 @@ window.App = {
       window.AppState.activeLanguage = e.target.value;
     });
 
+    // Cross-tab synchronization to avoid concurrent calls and duplicate audio agents
+    try {
+      this.tabSyncChannel = new BroadcastChannel("sales_bot_tab_sync");
+      this.tabSyncChannel.onmessage = (ev) => {
+        if (ev.data?.type === "DISCONNECT_OTHER_TABS" && window.AppState.isCallActive) {
+          console.warn("Disconnecting call because another tab started a voice session.");
+          this.endCall();
+        }
+      };
+    } catch (e) {}
+
+    window.addEventListener("beforeunload", () => {
+      if (window.AppState.isCallActive) {
+        localStorage.removeItem("active_sales_call_session");
+        LiveKitManager.disconnect();
+      }
+    });
+    window.addEventListener("pagehide", () => {
+      if (window.AppState.isCallActive) {
+        localStorage.removeItem("active_sales_call_session");
+        LiveKitManager.disconnect();
+      }
+    });
+
     console.log("AI Sales Intelligence Dashboard ready.");
   },
 
@@ -449,6 +473,23 @@ window.App = {
   },
 
   async startCall() {
+    // Cross-tab concurrency guard: prevent two voice agents running simultaneously across tabs
+    const existingSession = localStorage.getItem("active_sales_call_session");
+    if (existingSession && !window.AppState.isCallActive) {
+      const confirmTakeover = confirm(
+        "A sales voice call was detected in another tab or previous session.\n\n" +
+        "To avoid multiple voice agents and echo, click OK to terminate that call and start here, or Cancel to return."
+      );
+      if (!confirmTakeover) {
+        return;
+      }
+      try {
+        if (this.tabSyncChannel) {
+          this.tabSyncChannel.postMessage({ type: "DISCONNECT_OTHER_TABS" });
+        }
+      } catch (e) {}
+    }
+
     const btn = document.getElementById("btn-call-toggle");
     const label = document.getElementById("call-toggle-label");
     const statusRole = document.getElementById("bot-role-status");
@@ -516,6 +557,7 @@ window.App = {
       }, room_name);
 
       window.AppState.isCallActive = true;
+      localStorage.setItem("active_sales_call_session", room_name);
       btn.disabled = false;
       btn.classList.remove("start-mode");
       label.textContent = "End Call";
@@ -549,6 +591,7 @@ window.App = {
 
   async onCallTerminated() {
     window.AppState.isCallActive = false;
+    localStorage.removeItem("active_sales_call_session");
     this.stopTranscriptPolling();
 
     const btn = document.getElementById("btn-call-toggle");

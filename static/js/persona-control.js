@@ -21,6 +21,29 @@ const PersonaControl = {
     await this.loadTools();
     await this.loadAgents();
     if (window.lucide) window.lucide.createIcons();
+
+    try {
+      this.tabSyncChannel = new BroadcastChannel("sales_bot_tab_sync");
+      this.tabSyncChannel.onmessage = (ev) => {
+        if (ev.data?.type === "DISCONNECT_OTHER_TABS" && this.isCallActive) {
+          console.warn("Ending test call because another tab started a voice session.");
+          this.endVoiceCall();
+        }
+      };
+    } catch (e) {}
+
+    window.addEventListener("beforeunload", () => {
+      if (this.isCallActive && window.LiveKitManager) {
+        localStorage.removeItem("active_sales_call_session");
+        LiveKitManager.disconnect();
+      }
+    });
+    window.addEventListener("pagehide", () => {
+      if (this.isCallActive && window.LiveKitManager) {
+        localStorage.removeItem("active_sales_call_session");
+        LiveKitManager.disconnect();
+      }
+    });
   },
 
   bindEvents() {
@@ -844,6 +867,21 @@ Strict Commercial Guardrails:
   },
 
   async startVoiceCall() {
+    // Cross-tab concurrency guard: check if another call is already active
+    const existingSession = localStorage.getItem("active_sales_call_session");
+    if (existingSession && !this.isCallActive) {
+      const confirmTakeover = confirm(
+        "A sales call was detected in another tab or session.\n\n" +
+        "Click OK to terminate that session and start here, or Cancel to return."
+      );
+      if (!confirmTakeover) return;
+      try {
+        if (this.tabSyncChannel) {
+          this.tabSyncChannel.postMessage({ type: "DISCONNECT_OTHER_TABS" });
+        }
+      } catch (e) {}
+    }
+
     const btn = document.getElementById("btn-start-test-call");
     const statusText = document.getElementById("test-call-status-text");
     if (btn) btn.disabled = true;
@@ -867,6 +905,7 @@ Strict Commercial Guardrails:
 
       const tokenData = await tokenResp.json();
       this.isCallActive = true;
+      localStorage.setItem("active_sales_call_session", tokenData.room_name);
       if (btn) {
         btn.disabled = false;
         btn.classList.add("in-call");
@@ -913,6 +952,7 @@ Strict Commercial Guardrails:
 
   async endVoiceCall() {
     this.isCallActive = false;
+    localStorage.removeItem("active_sales_call_session");
     this.stopCallTimer();
 
     const btn = document.getElementById("btn-start-test-call");

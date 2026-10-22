@@ -228,6 +228,7 @@ async def entrypoint(ctx: JobContext):
     )
 
     last_spoken_text = None
+    seen_bot_texts = set()
 
     class SalesAgent(voice.Agent):
         def transcription_node(self, text, model_settings):
@@ -250,6 +251,12 @@ async def entrypoint(ctx: JobContext):
     )
 
     async def broadcast_and_save(room: rtc.Room, c_id: str, speaker: str, text: str):
+        if speaker == "bot":
+            norm_key = " ".join(text.split())
+            if norm_key in seen_bot_texts:
+                return
+            seen_bot_texts.add(norm_key)
+
         # 1. Save to DB
         await append_transcript_message(c_id, speaker, text)
         # 2. Broadcast via LiveKit Data Channel for zero-latency UI chat sync
@@ -386,8 +393,12 @@ async def entrypoint(ctx: JobContext):
         disclose_consent=disclose_consent
     )
     last_spoken_text = initial_greeting.strip()
-    session.say(initial_greeting, allow_interruptions=True)
+    speech = session.say(initial_greeting, allow_interruptions=False)
     asyncio.create_task(broadcast_and_save(ctx.room, call_id, "bot", last_spoken_text))
+    try:
+        await speech.wait_for_playout()
+    except Exception:
+        pass
 
     # Wait for call to conclude
     await disconnect_event.wait()
