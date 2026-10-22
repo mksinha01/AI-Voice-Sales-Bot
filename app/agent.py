@@ -173,16 +173,22 @@ async def entrypoint(ctx: JobContext):
         stt = GeminiSTT(language=language, api_key=settings.GOOGLE_API_KEY)
 
     cartesia_api_key = settings.CARTESIA_API_KEY or os.environ.get("CARTESIA_API_KEY")
+    tts_engine = None
     if cartesia_api_key:
-        cartesia_lang = None if language == "auto" else (language.split("-")[0] if language else "en")
-        tts_engine = cartesia.TTS(
-            api_key=cartesia_api_key,
-            model="sonic-3",
-            language=cartesia_lang,
-            voice=get_cartesia_voice(language),
-            word_timestamps=(cartesia_lang in ["en", "de", "es", "fr"]) if cartesia_lang else False,
-        )
-    else:
+        try:
+            cartesia_lang = None if language == "auto" else (language.split("-")[0] if language else "en")
+            tts_engine = cartesia.TTS(
+                api_key=cartesia_api_key,
+                model="sonic-3.5",
+                language=cartesia_lang,
+                voice=get_cartesia_voice(language),
+                word_timestamps=(cartesia_lang in ["en", "de", "es", "fr"]) if cartesia_lang else False,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to initialize Cartesia TTS, falling back to EdgeTTS: {e}")
+            tts_engine = None
+
+    if tts_engine is None:
         voice_name = get_tts_voice(language)
         tts_engine = EdgeTTS(voice=voice_name)
 

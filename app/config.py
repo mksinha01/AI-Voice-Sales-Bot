@@ -28,8 +28,8 @@ class Settings(BaseSettings):
 
     # Google Gemini credentials
     GOOGLE_API_KEY: str = ""
-    GEMINI_VOICE_MODEL: str = "gemini-3.5-flash-lite"
-    GEMINI_ANALYSIS_MODEL: str = "gemini-3.5-flash-lite"
+    GEMINI_VOICE_MODEL: str = "gemini-3.5-flash"
+    GEMINI_ANALYSIS_MODEL: str = "gemini-3.5-flash"
 
     # Speech Synthesis & Recognition Services
     CARTESIA_API_KEY: str = ""
