@@ -8,7 +8,7 @@ Built for **Sankar Group – Intern Assignment** based on `doc/goal.md` and `pro
 
 ## 🔗 Live Links & Repository
 
-- 🌐 **Live Production Application:** `https://salesbot.yourdomain.com` *(Replace with your live production URL)*
+- 🌐 **Live Production Application:** [https://65.20.68.250.sslip.io/](https://65.20.68.250.sslip.io/)
 - 📦 **GitHub Repository:** [https://github.com/mksinha01/AI-Voice-Sales-Bot](https://github.com/mksinha01/AI-Voice-Sales-Bot)
 - 📑 **Assignment Specification:** [doc/goal.md](doc/goal.md)
 
