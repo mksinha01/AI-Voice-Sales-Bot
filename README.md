@@ -6,6 +6,14 @@ Built for **Sankar Group – Intern Assignment** based on `doc/goal.md` and `pro
 
 ---
 
+## 🔗 Live Links & Repository
+
+- 🌐 **Live Production Application:** `https://salesbot.yourdomain.com` *(Replace with your live production URL)*
+- 📦 **GitHub Repository:** [https://github.com/mksinha01/AI-Voice-Sales-Bot](https://github.com/mksinha01/AI-Voice-Sales-Bot)
+- 📑 **Assignment Specification:** [doc/goal.md](doc/goal.md)
+
+---
+
 ## 🌟 Key Capabilities
 
 - **Real-Time Voice Conversation:** Low-latency WebRTC bidirectional voice dialogue powered by LiveKit and Google Gemini 2.0 Flash.
